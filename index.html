@@ -45,6 +45,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'VT323',monospace;}
 .btn.red{background:#8A1818;color:#FFDDDD;border-top-color:#E04444;border-left-color:#E04444;border-right-color:#300000;border-bottom-color:#300000;box-shadow:0 5px 0 #180000;}
 .btn.red:active{box-shadow:0 1px 0 #180000;}
 .btn.dim{background:#304050;color:#7AABB8;border-top-color:#506880;border-left-color:#506880;border-right-color:#101820;border-bottom-color:#101820;box-shadow:0 5px 0 #080e14;opacity:.7;}
+.btn.walk{background:#3A6828;color:#D8F0C0;border-top-color:#6AAA48;border-left-color:#6AAA48;border-right-color:#142808;border-bottom-color:#142808;box-shadow:0 5px 0 #0A1804;}
+.btn.walk:active{box-shadow:0 1px 0 #0A1804;border-top-color:#142808;border-left-color:#142808;border-right-color:#6AAA48;border-bottom-color:#6AAA48;}
 .btn.active-river{background:#186898;color:#DDF0FF;border-top-color:#5ABCE2;border-left-color:#5ABCE2;border-right-color:#082840;border-bottom-color:#082840;box-shadow:0 5px 0 #040e18;animation:riverGlow .55s ease-in-out infinite alternate;}
 @keyframes riverGlow{from{box-shadow:0 5px 0 #040e18,0 0 8px rgba(90,188,226,.5);}to{box-shadow:0 5px 0 #040e18,0 0 30px rgba(90,188,226,1),0 0 55px rgba(90,188,226,.4);}}
 
@@ -181,7 +183,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'VT323',monospace;}
     <button id="river-btn" class="btn dim sm" onclick="clickRiver()">River is dormant...</button>
     <button class="btn gold sm" onclick="goShop()">Seed Shop</button>
   </div>
-  <button id="walk-btn" class="btn sm" style="width:min(300px,93vw);font-size:15px" onclick="goOverworld()">Take a Walk</button>
+  <button id="walk-btn" class="btn walk sm" style="width:min(300px,93vw);font-size:15px" onclick="goOverworld()">Take a Walk</button>
   <div class="grid" id="tile-grid"></div>
   <div id="golden-cat-farm"></div>
   <div class="act-grid">
@@ -354,7 +356,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'VT323',monospace;}
     <div class="ow-joystick-knob" id="ow-joystick-knob"></div>
   </div>
   <div id="ow-quote-panel">
-    <p class="ow-quote-name">anna karenina</p>
+    <p class="ow-quote-name">tolstoy</p>
     <p class="ow-quote-text" id="ow-quote-text"></p>
     <div style="margin-top:10px;text-align:right">
       <button class="btn sm" onclick="owCloseQuote()">Close</button>
@@ -480,7 +482,7 @@ function render(){
    SECRET TILE-8 TRIPLE CLICK  +  L-SHAPE POTATO HACK
    ══════════════════════════════ */
 let secretClicks=0,secretTimer=null;
-// L-shape: tap tiles 0,3,6,7,8,8 in sequence within 6 seconds
+// L-shape: tap tiles 0,3,6,7,8,8 in sequence within 1.8 seconds
 const L_SEQ=[0,3,6,7,8,8];
 let lIdx=0,lTimer=null;
 function handleTileClick(i){
@@ -502,12 +504,12 @@ function handleTileClick(i){
       lIdx=0;
       G.harvested+=10;render();toast('10 sweet potatoes appeared in the soil.');
     } else {
-      lTimer=setTimeout(()=>lIdx=0,6000);
+      lTimer=setTimeout(()=>lIdx=0,1800);
     }
   } else {
     lIdx=0; clearTimeout(lTimer);
     // restart check in case this tap begins the sequence
-    if(i===L_SEQ[0]){ lIdx=1; clearTimeout(lTimer); lTimer=setTimeout(()=>lIdx=0,6000); }
+    if(i===L_SEQ[0]){ lIdx=1; clearTimeout(lTimer); lTimer=setTimeout(()=>lIdx=0,1800); }
   }
 
   render();
@@ -602,7 +604,8 @@ function heartTrade(){
   heartClicks++;
   clearTimeout(heartTimer);
   heartTimer=setTimeout(()=>heartClicks=0,3000);
-  if(heartClicks>=5){heartClicks=0;G.secretPending=true;return;}
+  if(heartClicks===5){heartClicks=0;G.secretPending=true;return;}
+  if(heartClicks>5){heartClicks=0;return;}
   toast('You cannot trade your heart.');
 }
 
@@ -1070,70 +1073,78 @@ function leaveOverworld(){
 }
 
 /* ══════════════════════════════
-   ANNA KARENINA QUOTES
+   TOLSTOY QUOTES (Anna Karenina)
    ══════════════════════════════ */
 const AK_QUOTES=[
-  "All happy families are alike; each unhappy family is unhappy in its own way.",
-  "He stepped down, trying not to look long at her, as if she were the sun, yet he saw her, like the sun, even without looking.",
+  /* On society, class & hypocrisy */
+  "In all the strata of society there was an idea that the way things were was inevitable, and that it was impossible to change them, and therefore natural not to think about them.",
+  "He soon felt that the fulfillment of his desires gave him only one grain of the mountain of happiness he had expected. This fulfillment showed him the eternal error men make in imagining that their happiness depends on the realization of their desires.",
+  "The highest praise of a man of the world is that he is so polished, so free from roughness, that he can speak of one thing and mean another, and his listener understands both — the thing said and the thing concealed.",
+  "There was no solution, but that universal solution which life gives to all questions, even the most complex and insoluble. That solution is to live in the needs of the day, that is, to forget oneself.",
+  "He felt that all the society around him was an elaborate machine devised to manufacture opinions, and that he was a cog in this machine.",
+  "She belonged to a world of wealth and society where they lived, quite genuinely, as though the absence of suffering were proof of virtue.",
+  "Moscow society was made up of people who were either very important or very necessary. Important people spoke of nothing but the weather, the opera, and their ailments. Necessary people never finished their sentences.",
+  /* On farming, nature, the land */
+  "He went out before sunrise. The dew lay on the grass. A quail piped in the rye. The rooks, awakening, swung clumsily from branch to branch in the lofty birch-trees. Peasants with their cattle were emerging from the village. He breathed in the smell of the mist, the rotting leaves, the damp earth — and was happy.",
+  "The longer Levin mowed, the oftener he experienced those moments of oblivion when it was not his arms which swung the scythe, but the scythe seemed to mow of itself, a body full of life and consciousness of its own, and as though by magic, without thinking of it, the work turned out regular and finished.",
+  "The whole long summer's day he spent in the fields, and as he drove home in the evening, he thought: the work was good. He did not analyze why it was good. It was simply good — the way rain is good after drought, or sleep after exhaustion.",
+  "The haying was in full swing. The meadows, with the sweet smell of the mown grass and the glistening dew, stretched out bright and peaceful in the morning sun.",
+  "He stood at the edge of the rye field and felt all of it — the hot earth beneath his boots, the sky pressing down on the crop, the patient readiness of things that grow — and for a moment he could not remember why he had ever lived anywhere else.",
+  "In the country, Levin was not simply happy. He was absorbed. Every morning brought new things to be done. Every evening brought the satisfaction of things completed. He had not felt this in the city, where the days slid past without leaving a mark.",
+  "There is a particular beauty in a field that has just been turned. It is not the beauty of a painting or a sunset. It is the beauty of a promise — something that has been prepared, and is now waiting.",
+  /* On belief, God, meaning */
+  "Without knowing what I am and why I am here, it is impossible to live. And that I cannot know, and so I cannot live. In the infinity of time, in the infinity of matter, in the infinity of space, a bubble-organism separates itself, and that bubble lasts a while and then bursts — and that bubble is me.",
+  "He had been living a spiritual life — and suddenly, confronted with the coarseness of material reality, he felt not contempt for material life, but awe. The two were not opposed. They had been waiting to be joined.",
+  "The simple peasant lives by the same questions I have been tormenting myself with for years, Levin thought — except that he does not torment himself. He answers them in the morning, with his hands, and again in the evening, with his rest.",
+  "He knew now that he did not live for himself and could not live for himself. He lived for God, for his soul, for people. When he forgot this, he was miserable. When he remembered it, he was at peace.",
+  "He had prayed before — mechanically, formally. Now he prayed because he did not know what else to do, which is perhaps the only honest kind of prayer.",
+  "All we can know is that we know nothing, and that is the highest degree of human wisdom.",
+  "God is the same for all. Why should he be mine and not yours? Why is he yours and not theirs? Levin sat with the question for a long time, and could not answer it, and was glad.",
+  /* On death */
+  "The candle by which she had been reading the book filled with troubles, triumphs, grief and joy flared up with greater brightness than she had ever known, then flickered, grew dim, and went out forever.",
+  "Death. What is death? For the first time he felt it. Not the word. Not the idea. He felt it the way you feel cold — not as a concept, but as something actually touching you.",
+  "He thought of all the people he had watched die slowly — their patience, their economy of breath, the way they stopped arguing with what was happening to them. He had always considered this weakness. Now he understood it was a kind of grace.",
+  "She felt that her position in the world was growing more and more precarious, and that the time was not far off when it would crumble. She did not think about this at length. She thought about other things, and beneath all of it, the crumbling continued.",
+  /* On class, marriage, family */
+  "The Shcherbatskys, the Oblonskys, the Karenins — each family represented a distinct theory of what life required of you. None of them could quite believe the others were living correctly.",
+  "Marriage to him had always seemed like an impossibility. Not because he feared it, but because he could never imagine himself in it — the ceremony, the rings, the legal documents — all of it describing something that felt wild and provisional and impossible to sign your name to.",
+  "The children grew, and Natasha loved them — but she felt sometimes that she was performing love, not feeling it, and the performance was so good that she could not remember where the feeling had gone.",
+  "Families are arranged by proximity, not by choice. We do not select our kin. We merely arrive among them, and the rest is negotiation.",
+  /* On thought, psychology, consciousness */
+  "Rummaging in our souls, we often dig up something that ought to have lain there unnoticed. The trouble with introspection is that it does not merely observe what is there — it changes it.",
+  "He had always been afraid that if he examined his own motives too closely, he would find nothing very creditable. Now he examined them. He was right.",
+  "There are ideas which come to you so clearly and forcefully that you are certain you have thought them before — that they were always there, and merely waiting for the right moment to arrange themselves into words.",
+  "There was in her an extraordinary refinement of feeling that made her understand at once not only what people said but what they did not say, and what they would have said if they had been able.",
+  "What he felt was not jealousy exactly — jealousy required a clearer shape. What he felt was a kind of weather — low pressure, indeterminate, the sense that something was about to change and that he had no control over what it would change into.",
+  "She was used to being observed, and she carried herself accordingly. It was only alone — in the carriage, or in the moment before sleep — that she allowed her face to settle into what it actually was.",
+  /* On seasons, weather, time */
+  "In autumn the world contracts. The light becomes economical. The trees rehearse a kind of patience. Levin felt it as he always did — a shortening of options, a narrowing toward the one thing most true.",
+  "Spring is a shock, every year. You know it is coming and it still startles you. The first warmth is an apology from the earth, and you accept it before you even know what it is for.",
+  "It was one of those evenings in midsummer when the world does not go dark so much as change color — the grass deepening to something almost black, the sky retaining a faint silver it refuses to give up entirely.",
+  "The winter had been long enough that everyone had forgotten what they had been planning to do in the spring. This was, Levin thought, probably good. Plans made before winter are rarely the right ones.",
+  "He walked home in the rain and felt better for it. There is something honest about rain — it does not ask you to feel any particular way. It simply continues.",
+  /* On happiness, suffering, meaning */
   "There are no conditions of life to which a man cannot get accustomed, especially if he sees them accepted by everyone about him.",
-  "Rummaging in our souls, we often dig up something that ought to have lain there unnoticed.",
   "All the variety, all the charm, all the beauty of life is made up of light and shadow.",
-  "If you look for perfection, you'll never be content.",
-  "The law of loving others could not be discovered by reason, because it is unreasonable.",
-  "Spring is the time of plans and projects.",
-  "Without knowing what I am and why I am here, it is impossible to live.",
-  "If it is true that there are as many minds as there are heads, then there are as many kinds of love as there are hearts.",
-  "A quiet secluded life in the country, with the possibility of being useful to people to whom it is easy to do good — that is my idea of happiness.",
-  "He felt now that he was not simply close to her, but that he did not know where he ended and she began.",
-  "Something magical has happened to me: like a dream when one feels frightened and creepy, and suddenly wakes up to the knowledge that no such terrors exist.",
-  "Love. The reason I dislike that word is that it means too much for me, far more than you can understand.",
-  "He had learnt that in spite of the sadness of that day, everything was going well and that the world was beautiful.",
-  "The candle by which she had been reading the book of life, full of doubts and troubles, flickered, grew dim, and went out forever.",
-  "There is no greatness where there is no simplicity, goodness and truth.",
-  "There was no solution, but that universal solution which life gives to all questions, even the most complex and insoluble.",
-  "Nothing is so necessary for a young man as the company of intelligent women.",
-  "She was not thinking. She was living.",
-  "The strongest of all warriors are these two — Time and Patience.",
-  "He felt that the thread of life was connecting him to everything around him.",
-  "She smiled, and he saw in her smile something he had not seen before.",
-  "Everything that seemed impossible turned out to be quite possible.",
-  "He felt that something was happening in his soul which he did not understand.",
-  "One must never underestimate the power of the human need for consistency.",
-  "Whatever decision is made, it should be made of love.",
-  "To understand is to forgive.",
-  "She was in that happy condition in which a woman needs no longer to dissemble.",
-  "There was something in her face that frightened him — a beauty that seemed not to belong to this world.",
-  "He looked at the stars and thought that if a man truly understood them, he would understand everything.",
-  "The night was so still, so cold, the stars so bright.",
-  "It is amazing how complete is the delusion that beauty is goodness.",
-  "The more intelligent the man, the more capable he is of understanding what he does not know.",
-  "He had been mowing and fishing, and now, having spent a whole long summer's day in the fields, he lay down to rest on the soft grass.",
-  "He saw clearly that what kept them apart was not any external obstacle, but the invisible wall of their own natures.",
-  "In the city nothing matters so much as the opinions of strangers; in the country, only the land and the sky.",
-  "A man who has once begun to love has no free will left in the matter.",
-  "He could not understand how people could live without knowing the answers to these questions.",
-  "There is something frightening in the feeling of perfect contentment.",
-  "The grass, the trees, the air — all seemed to say to him that everything was well.",
-  "Love is life. All, everything that I understand, I understand only because I love.",
-  "Kindness and generosity seem simple until you are asked to practice them on someone you dislike.",
-  "There are moments when a man feels suddenly that he is two people — one watching the other make a terrible mistake.",
-  "He did not know whether it was good or bad; he only knew that it was true.",
-  "She saw in his face a new expression — not joyful, but quiet and still, as a deep lake is still.",
-  "All the wheat fields of summer cannot console a man for what he never said.",
-  "It was one of those clear autumn days when the air itself seems to think.",
-  "The birds were singing as if they knew something joyful that no human being could share.",
-  "He realized that the path forward required him to stop searching for the path.",
-  "Real happiness is not in getting what you want — it is in wanting what you get.",
-  "He saw that she was suffering, and he suffered for her, and there was nothing he could do.",
-  "There are people who, when they encounter a truly good person, can only think of ways to diminish them.",
-  "He stepped onto the field and immediately felt the difference — the town was behind him.",
-  "It is possible to give up on happiness. It is not possible to give up on meaning.",
-  "There is something in a man that will not let him abandon the earth, even when the earth has nothing left to offer him.",
-  "She had thought love was like a flame — sudden, bright, consuming. She had not known it could also be like soil, dark and patient.",
-  "He worked in the fields not because he had to, but because it was the only honest answer to the question the sky kept asking.",
-  "The simplest things — bread, water, sleep — became beautiful again the moment he stopped expecting something more.",
-  "Every person carries inside them a country no one else has ever visited.",
-  "The land does not ask why you have come. It only asks what you intend to do while you are here.",
+  "He had learnt that in spite of the sadness of that day, everything was going well and that the world was beautiful. This knowledge arrived in the body before it arrived in the mind — a loosening in the chest, a willingness to look up.",
+  "We are asleep until we fall in love. And then we are merely awake — which is not always better, but is at least truer.",
+  "There is no greatness where there is no simplicity, goodness and truth. And there is no simplicity that does not require years of complicated living to arrive at.",
+  "The highest ambition, he decided, was not to be extraordinary — it was to be genuinely present in an ordinary day. This was harder than it sounded. He tried it all morning and succeeded only in moments.",
+  "He was accustomed to the misery of other people — it was part of the landscape of the world, like poverty and weather. But happiness in other people still surprised him. He could not say why.",
+  "She had known for a long time that she was unhappy. What she had not known was that she had a choice about it. She was not sure she believed this now. But she held the idea carefully, the way you hold something fragile in both hands when you are walking on uneven ground.",
+  "Every lie you tell creates a small new room inside you, and you have to live there. After a while, you run out of space.",
+  /* On time, memory, change */
+  "He found that he could not think of a time in his life when he had not been moving toward this moment, though he could not have described the moment five minutes before it arrived.",
+  "Memory is not a place you visit. It is more like weather — it arrives without warning, alters the light, makes everything feel briefly familiar and briefly strange, and then it passes and you are left with whatever remains.",
+  "He had grown old enough to know that things do not end, they merely become less urgent. The old sorrows were still there. They had simply learned to be quiet.",
+  "She looked at the portrait of her younger self and felt nothing she expected to feel. She felt instead a profound tenderness, as though the girl in the portrait were a stranger who had suffered something she could not quite name.",
+  "Time does not move forward in a line. It accumulates. You carry all of it — every morning, every argument, every moment of unexpected beauty. You get heavier as you go, and this is not a bad thing.",
+  /* On the land, peasants, work */
+  "The peasant's relation to the land was not a theory — it was not even a feeling. It was something prior to feeling, something closer to weather or digestion, a fact of the body that the mind could only observe.",
+  "He had read hundreds of books about agriculture. He had spoken to professors, visited model farms, attended exhibitions. None of it had prepared him for the smell of turned earth in early April, or the way a well-thrown seed falls.",
+  "The men in the fields moved without haste and without idleness. Their bodies had long since settled into the rhythm of the work, and watching them, Levin felt the particular shame of a man who has spent his life thinking about things he could have simply done.",
+  "There is a kind of knowing that comes only from the hands. The scholar may know everything about grain and still hold it wrong. The peasant knows nothing about grain and holds it perfectly. This is not a paradox. It is a fact about knowledge.",
+  "After a day of labor in the sun, he sat in the shade and ate black bread and drank cold water from a stream, and he could not think of a single thing that was missing.",
 ];
 let _akUsed=[];
 function randomQuote(){
@@ -1147,34 +1158,39 @@ function randomQuote(){
 /* ══════════════════════════════
    OVERWORLD ENGINE
    ══════════════════════════════ */
-const OW_W=2600, OW_H=2600;
+const OW_W=3800, OW_H=3800;
 const OW_SPD=2.4;
-const OW_INTERACT_R=55;
-const OW_TILE=4; // grass tile size px
+const OW_INTERACT_R=58;
+const OW_TILE=4;
 
-const OBJ_TYPES=['tree','rock','pond','brook','bird','flower','potato','farmhouse','tree','rock','flower','tree'];
+const OBJ_TYPES=[
+  'tree','rock','pond','brook','bird','flower','potato','farmhouse',
+  'tree','rock','flower','tree','tree','mushroom','fence','haystack',
+  'pond','bird','flower','tree','rock','potato','brook','mushroom',
+  'fence','tree','flower','haystack','rock','tree',
+];
 
 let owState=null;
 
 function owMkWorld(){
   const objects=[];
   const startX=OW_W/2, startY=OW_H/2;
-  const minDist=190;
-  const margin=120;
+  const minDist=200;
+  const margin=140;
   let attempts=0;
-  while(objects.length<22&&attempts<2000){
+  while(objects.length<38&&attempts<4000){
     attempts++;
     const x=margin+Math.random()*(OW_W-margin*2);
     const y=margin+Math.random()*(OW_H-margin*2);
     const distFromStart=Math.hypot(x-startX,y-startY);
-    if(distFromStart<140) continue;
+    if(distFromStart<150) continue;
     let ok=true;
     for(const o of objects){
       if(Math.hypot(o.x-x,o.y-y)<minDist){ok=false;break;}
     }
     if(ok){
       const type=OBJ_TYPES[Math.floor(Math.random()*OBJ_TYPES.length)];
-      objects.push({x,y,type});
+      objects.push({x,y,type,lastInteracted:0});
     }
   }
   return objects;
@@ -1402,6 +1418,40 @@ function owDrawObj(ctx,x,y,type,highlight){
     // window
     ctx.fillStyle='#A8D0E8'; ctx.fillRect(xi+6,yi-8,8,8);
     ctx.fillStyle='#5C3010'; ctx.fillRect(xi+9,yi-8,2,8);ctx.fillRect(xi+6,yi-5,8,2);
+  } else if(type==='mushroom'){
+    // stem
+    ctx.fillStyle='#D8C8A0'; ctx.fillRect(xi-5,yi,10,14);
+    ctx.fillStyle='#C0A880'; ctx.fillRect(xi-5,yi,3,14);
+    // cap
+    ctx.fillStyle='#C83020'; ctx.fillRect(xi-14,yi-14,28,18);
+    ctx.fillStyle='#E84030'; ctx.fillRect(xi-12,yi-20,24,10);
+    ctx.fillStyle='#D03828'; ctx.fillRect(xi-6,yi-24,12,6);
+    // spots
+    ctx.fillStyle='#F8F0E0';
+    ctx.fillRect(xi-8,yi-16,5,5); ctx.fillRect(xi+4,yi-18,4,4); ctx.fillRect(xi-2,yi-10,5,5);
+    // shade
+    ctx.fillStyle='#A02018'; ctx.fillRect(xi-14,yi-14,5,18);
+  } else if(type==='fence'){
+    ctx.fillStyle='#A87840';
+    for(let f=0;f<4;f++){
+      const fx=xi-18+f*12;
+      ctx.fillRect(fx,yi-18,5,26);
+      ctx.fillRect(fx,yi-24,5,8); // pointed top
+      ctx.fillRect(fx+1,yi-28,3,6);
+      ctx.fillRect(fx+2,yi-30,1,4);
+    }
+    ctx.fillStyle='#9A6C30';
+    ctx.fillRect(xi-18,yi-12,48,5);
+    ctx.fillRect(xi-18,yi,48,5);
+  } else if(type==='haystack'){
+    ctx.fillStyle='#C8A020'; ctx.fillRect(xi-20,yi,40,18);
+    ctx.fillStyle='#D4B030'; ctx.fillRect(xi-16,yi-10,32,14);
+    ctx.fillStyle='#DCBE38'; ctx.fillRect(xi-10,yi-18,20,12);
+    ctx.fillStyle='#E0C840'; ctx.fillRect(xi-4,yi-22,8,6);
+    // straw lines
+    ctx.fillStyle='#B89018';
+    for(let s=0;s<5;s++) ctx.fillRect(xi-18+s*8,yi+2,3,14);
+    for(let s=0;s<4;s++) ctx.fillRect(xi-12+s*7,yi-8,3,10);
   }
 }
 
@@ -1455,6 +1505,14 @@ function owClickRiver(){
 
 /* ── interact ── */
 function owInteract(){
+  if(!owState||!owState.nearObj) return;
+  const o=owState.nearObj;
+  const now=Date.now();
+  if(now-o.lastInteracted<20000){
+    toast('Come back to this in a moment.');
+    return;
+  }
+  o.lastInteracted=now;
   const panel=document.getElementById('ow-quote-panel');
   document.getElementById('ow-quote-text').textContent=randomQuote();
   panel.style.display='block';
