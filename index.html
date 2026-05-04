@@ -131,6 +131,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'VT323',monospace;}
 #ow-quote-panel{position:absolute;bottom:0;left:0;right:0;background:rgba(18,8,0,.96);border-top:3px solid #C8A050;padding:16px 18px 20px;z-index:20;display:none;max-height:52%;}
 .ow-quote-name{font-family:'Press Start 2P',monospace;font-size:6px;color:#C8A050;margin-bottom:10px;letter-spacing:2px;}
 .ow-quote-text{font-family:'VT323',monospace;font-size:20px;color:#FFF0C0;line-height:1.55;overflow-y:auto;max-height:120px;}
+/* ── CAVE SCREEN ──────────────────────────── */
+#s-cave{background:linear-gradient(180deg,#080808 0%,#14100A 40%,#1A1408 100%);overflow:hidden;}
+#cave-canvas{display:block;position:absolute;inset:0;pointer-events:none;}
+#cave-hdr{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:8px;color:#A09060;letter-spacing:3px;z-index:10;text-shadow:0 0 8px rgba(160,144,96,.7);}
+#cave-back-btn{position:absolute;top:38px;right:8px;z-index:15;}
+#cave-panel{position:absolute;bottom:0;left:0;right:0;background:rgba(8,6,0,.97);border-top:3px solid #806840;padding:16px 18px 22px;z-index:20;}
+.cave-name{font-family:'Press Start 2P',monospace;font-size:6px;color:#A09060;margin-bottom:10px;letter-spacing:2px;}
+.cave-text{font-family:'VT323',monospace;font-size:21px;color:#E8D8A0;line-height:1.55;margin-bottom:12px;}
+.cave-input{font-family:'VT323',monospace;font-size:22px;background:#1A1408;color:#E8D8A0;border:2px solid #806840;padding:6px 12px;width:100%;margin-bottom:10px;outline:none;}
+.cave-row{display:flex;gap:8px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -364,6 +374,29 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'VT323',monospace;}
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     CAVE SCREEN
+     ══════════════════════════════════════════ -->
+<div class="screen" id="s-cave">
+  <canvas id="cave-canvas"></canvas>
+  <p id="cave-hdr">The Cave</p>
+  <button id="cave-back-btn" class="btn sm" onclick="leaveCave()">Back Outside</button>
+  <div id="cave-panel">
+    <p class="cave-name" id="cave-speaker">wizard</p>
+    <p class="cave-text" id="cave-text">...</p>
+    <div id="cave-quest-area" style="display:none">
+      <input class="cave-input" id="cave-answer" type="text" placeholder="type answer here..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="cave-row">
+        <button class="btn sm" onclick="submitQuest()">Submit</button>
+        <button class="btn red sm" onclick="cancelQuest()">Cancel</button>
+      </div>
+    </div>
+    <div id="cave-action-row" class="cave-row" style="margin-top:8px">
+      <button class="btn sm" id="cave-accept-btn" style="display:none" onclick="acceptQuest()">I accept.</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ══════════════════════════════
    PIXEL ART HELPERS
@@ -406,6 +439,7 @@ const WATERS_NEEDED=8;
 let G=freshState();
 function freshState(){
   return{water:1,seeds:1,harvested:0,goldenCats:0,secretPending:false,
+         questsCompleted:0, questDoneThisVisit:false,
          sel:null,tiles:Array.from({length:9},()=>({planted:false,waters:0})),
          riverActive:false};
 }
@@ -599,13 +633,13 @@ function shopSecret(){
 }
 
 /* heart trade hack */
-let heartClicks=0,heartTimer=null;
+let heartClicks=0,heartTimer=null,heartUsed=false;
 function heartTrade(){
+  if(heartUsed) return;
   heartClicks++;
   clearTimeout(heartTimer);
   heartTimer=setTimeout(()=>heartClicks=0,3000);
-  if(heartClicks===5){heartClicks=0;G.secretPending=true;return;}
-  if(heartClicks>5){heartClicks=0;return;}
+  if(heartClicks===5){heartClicks=0;heartUsed=true;G.secretPending=true;return;}
   toast('You cannot trade your heart.');
 }
 
@@ -899,7 +933,7 @@ function endFlappy(){
   flappyState.running=false;
   cancelAnimationFrame(flappyState.raf);
   const score=flappyState.score;
-  const water=score>=14?5:score>=10?4:score>=6?3:score>=4?2:score>=2?1:0;
+  const water=score>=20?5:score>=15?4:score>=10?3:score>=5?2:score>=2?1:0;
 
   // draw death overlay on canvas
   const canvas=document.getElementById('flappy-canvas');
@@ -1070,6 +1104,7 @@ function goOverworld(){
 }
 function leaveOverworld(){
   owStop(); showScreen('s-farm'); render();
+  G.questDoneThisVisit=false;
 }
 
 /* ══════════════════════════════
@@ -1146,13 +1181,18 @@ const AK_QUOTES=[
   "There is a kind of knowing that comes only from the hands. The scholar may know everything about grain and still hold it wrong. The peasant knows nothing about grain and holds it perfectly. This is not a paradox. It is a fact about knowledge.",
   "After a day of labor in the sun, he sat in the shade and ate black bread and drank cold water from a stream, and he could not think of a single thing that was missing.",
 ];
-let _akUsed=[];
+let _akShuffled=[], _akShuffleIdx=0;
+function shuffleQuotes(){
+  _akShuffled=AK_QUOTES.map((_,i)=>i);
+  for(let i=_akShuffled.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [_akShuffled[i],_akShuffled[j]]=[_akShuffled[j],_akShuffled[i]];
+  }
+  _akShuffleIdx=0;
+}
 function randomQuote(){
-  if(_akUsed.length>=AK_QUOTES.length) _akUsed=[];
-  let idx;
-  do{ idx=Math.floor(Math.random()*AK_QUOTES.length); }while(_akUsed.includes(idx));
-  _akUsed.push(idx);
-  return AK_QUOTES[idx];
+  if(_akShuffleIdx===0||_akShuffleIdx>=_akShuffled.length) shuffleQuotes();
+  return AK_QUOTES[_akShuffled[_akShuffleIdx++]];
 }
 
 /* ══════════════════════════════
@@ -1219,6 +1259,8 @@ function startOverworld(){
     running:true,
     raf:null,
   };
+  // Always place cave fixed above spawn
+  owState.objects.push({x:OW_W/2,y:OW_H/2-220,type:'cave',lastInteracted:0});
 
   setupJoystick();
   syncOwRiverBtn();
@@ -1304,7 +1346,12 @@ function owTick(){
   const ibtn=document.getElementById('ow-interact-btn');
   const panel=document.getElementById('ow-quote-panel');
   if(panel.style.display==='none'){
-    ibtn.style.display=near?'block':'none';
+    if(near){
+      ibtn.style.display='block';
+      ibtn.textContent=near.type==='cave'?'Enter Cave':'Interact';
+    } else {
+      ibtn.style.display='none';
+    }
   }
 
   owDraw();
@@ -1448,10 +1495,33 @@ function owDrawObj(ctx,x,y,type,highlight){
     ctx.fillStyle='#D4B030'; ctx.fillRect(xi-16,yi-10,32,14);
     ctx.fillStyle='#DCBE38'; ctx.fillRect(xi-10,yi-18,20,12);
     ctx.fillStyle='#E0C840'; ctx.fillRect(xi-4,yi-22,8,6);
-    // straw lines
     ctx.fillStyle='#B89018';
     for(let s=0;s<5;s++) ctx.fillRect(xi-18+s*8,yi+2,3,14);
     for(let s=0;s<4;s++) ctx.fillRect(xi-12+s*7,yi-8,3,10);
+  } else if(type==='cave'){
+    // cave mouth — stone arch built into hillside
+    ctx.fillStyle='#5A5048'; ctx.fillRect(xi-36,yi-8,72,24); // ground mound
+    ctx.fillStyle='#6A6058'; ctx.fillRect(xi-30,yi-22,60,18); // mound top
+    ctx.fillStyle='#7A7068'; ctx.fillRect(xi-20,yi-30,40,12); // peak
+    // dark interior
+    ctx.fillStyle='#0A0806'; ctx.fillRect(xi-18,yi-20,36,28);
+    // arch stones
+    ctx.fillStyle='#8A8078';
+    ctx.fillRect(xi-22,yi-24,6,32); // left pillar
+    ctx.fillRect(xi+16,yi-24,6,32); // right pillar
+    ctx.fillRect(xi-22,yi-28,44,8); // lintel
+    ctx.fillStyle='#9A9088';
+    ctx.fillRect(xi-20,yi-26,4,4);
+    ctx.fillRect(xi+16,yi-26,4,4);
+    ctx.fillRect(xi-14,yi-30,6,4);
+    ctx.fillRect(xi+8,yi-30,6,4);
+    // dim glow from inside
+    ctx.fillStyle='rgba(180,140,60,0.08)';
+    ctx.fillRect(xi-14,yi-18,28,22);
+    if(highlight){
+      ctx.fillStyle='rgba(255,215,0,0.22)';
+      ctx.beginPath();ctx.arc(xi,yi,46,0,Math.PI*2);ctx.fill();
+    }
   }
 }
 
@@ -1507,6 +1577,7 @@ function owClickRiver(){
 function owInteract(){
   if(!owState||!owState.nearObj) return;
   const o=owState.nearObj;
+  if(o.type==='cave'){ enterCave(); return; }
   const now=Date.now();
   if(now-o.lastInteracted<20000){
     toast('Come back to this in a moment.');
@@ -1524,6 +1595,200 @@ function owCloseQuote(){
 
 /* keep overworld river button in sync when river activates/deactivates */
 const _origActivate=()=>{};  // placeholder; we patch updateRiverBtn below
+
+/* ══════════════════════════════
+   CAVE / WIZARD QUEST SYSTEM
+   ══════════════════════════════ */
+const QUESTS=[
+  {book:'Anna Karenina',            answer:'tolstoy'},
+  {book:'The Brothers Karamazov',   answer:'dostoevsky'},
+  {book:'Fathers and Sons',         answer:'turgenev'},
+  {book:'Yevgeny Onegin',           answer:'pushkin'},
+  {book:'Light in August',          answer:'faulkner'},
+  {book:'Death on the Installment Plan', answer:'celine'},
+  {book:'Tropic of Cancer',         answer:'miller'},
+  {book:'Naked Lunch',              answer:'burroughs'},
+  {book:'Play It as It Lays',       answer:'didion'},
+  {book:'Hadji Murat',              answer:'tolstoy', requireCats:5},
+];
+
+let caveQuestActive=false;
+
+function enterCave(){
+  if(G.goldenCats<2){toast('You need 2 golden cats to enter the cave.');return;}
+  owStop();
+  showScreen('s-cave');
+  drawCaveBackground();
+  caveQuestActive=false;
+  document.getElementById('cave-quest-area').style.display='none';
+  document.getElementById('cave-accept-btn').style.display='none';
+
+  const done=G.questsCompleted;
+  if(done>=QUESTS.length){
+    // all quests done
+    setCaveText('wizard','Congratulations.');
+    return;
+  }
+  if(G.questDoneThisVisit){
+    setCaveText('wizard','Return to the farm. Come back when you are ready for your next task.');
+    return;
+  }
+  const next=QUESTS[done];
+  if(next.requireCats&&G.goldenCats<next.requireCats){
+    setCaveText('wizard','You are not yet ready for the final task. Return when you have all 5 golden cats.');
+    return;
+  }
+  setCaveText('wizard','I have a quest for you. Do you accept?');
+  document.getElementById('cave-accept-btn').style.display='inline-block';
+}
+
+function leaveCave(){
+  showScreen('s-overworld');
+  startOverworld();
+}
+
+function setCaveText(speaker,text){
+  document.getElementById('cave-speaker').textContent=speaker;
+  document.getElementById('cave-text').textContent=text;
+}
+
+function acceptQuest(){
+  const done=G.questsCompleted;
+  const q=QUESTS[done];
+  document.getElementById('cave-accept-btn').style.display='none';
+  // Build prompt with book title in italics via unicode (plain text workaround: use em dashes and quotes)
+  document.getElementById('cave-speaker').textContent='wizard';
+  // We set innerHTML here for the italic book title only
+  document.getElementById('cave-text').innerHTML=
+    'What is the last name of the author who wrote <em>'+q.book+'</em>?';
+  document.getElementById('cave-quest-area').style.display='block';
+  document.getElementById('cave-answer').value='';
+  setTimeout(()=>document.getElementById('cave-answer').focus(),200);
+  caveQuestActive=true;
+}
+
+function submitQuest(){
+  if(!caveQuestActive) return;
+  const done=G.questsCompleted;
+  const q=QUESTS[done];
+  const ans=document.getElementById('cave-answer').value.trim().toLowerCase();
+  if(ans===q.answer){
+    const water=done+1; // quest 1 = 1 water, quest 2 = 2, etc.
+    G.water+=water;
+    G.questsCompleted++;
+    G.questDoneThisVisit=true;
+    caveQuestActive=false;
+    document.getElementById('cave-quest-area').style.display='none';
+    if(G.questsCompleted>=QUESTS.length){
+      setCaveText('wizard','Congratulations.');
+    } else {
+      setCaveText('wizard','Correct. +'+water+' water. Return when you are ready for your next task.');
+    }
+    render();
+  } else {
+    document.getElementById('cave-answer').value='';
+    setCaveText('wizard','That is not right. Try again.');
+    document.getElementById('cave-text').innerHTML=
+      'That is not right. What is the last name of the author who wrote <em>'+q.book+'</em>?';
+  }
+}
+
+function cancelQuest(){
+  caveQuestActive=false;
+  document.getElementById('cave-quest-area').style.display='none';
+  document.getElementById('cave-accept-btn').style.display='none';
+  setCaveText('wizard','Very well. Return when you are ready.');
+}
+
+function drawCaveBackground(){
+  const canvas=document.getElementById('cave-canvas');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+
+  // dim cave walls
+  ctx.fillStyle='#0C0A06'; ctx.fillRect(0,0,W,H);
+  // rough stone texture
+  const stoneColors=['#1A1610','#141008','#1E1A12','#120E08'];
+  for(let i=0;i<120;i++){
+    const sx=(Math.sin(i*137.5)*0.5+0.5)*W;
+    const sy=(Math.cos(i*73.1)*0.5+0.5)*H*0.6;
+    const sw=12+((i*31)%24);
+    const sh=8+((i*17)%12);
+    ctx.fillStyle=stoneColors[i%stoneColors.length];
+    ctx.fillRect(sx,sy,sw,sh);
+  }
+  // torch glow top left
+  ctx.fillStyle='rgba(200,120,20,0.12)';
+  ctx.beginPath();ctx.arc(W*0.15,H*0.22,70,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(200,120,20,0.07)';
+  ctx.beginPath();ctx.arc(W*0.15,H*0.22,110,0,Math.PI*2);ctx.fill();
+  // torch pixels
+  const tx=Math.floor(W*0.15), ty=Math.floor(H*0.22);
+  ctx.fillStyle='#5C3010'; ctx.fillRect(tx-4,ty+4,8,18);
+  ctx.fillStyle='#E87820'; ctx.fillRect(tx-5,ty-10,10,14);
+  ctx.fillStyle='#F8C040'; ctx.fillRect(tx-3,ty-14,6,8);
+  ctx.fillStyle='#FFF0A0'; ctx.fillRect(tx-1,ty-16,3,4);
+
+  // draw wizard in center-ish
+  drawWizard(ctx, Math.floor(W*0.5), Math.floor(H*0.28));
+}
+
+function drawWizard(ctx,x,y){
+  // staff
+  ctx.fillStyle='#6A4820'; ctx.fillRect(x+20,y-40,4,80);
+  ctx.fillStyle='#5040A0'; ctx.fillRect(x+17,y-58,10,12); // crystal base
+  ctx.fillStyle='#8080E8'; ctx.fillRect(x+18,y-66,8,10);  // crystal
+  ctx.fillStyle='#A0A0FF'; ctx.fillRect(x+20,y-70,4,6);   // tip
+  ctx.fillStyle='rgba(120,120,255,0.35)';
+  ctx.beginPath();ctx.arc(x+22,y-62,14,0,Math.PI*2);ctx.fill();
+
+  // robe body
+  ctx.fillStyle='#484848'; ctx.fillRect(x-16,y-10,32,50);
+  ctx.fillStyle='#383838'; ctx.fillRect(x-16,y-10,8,50);
+  ctx.fillStyle='#585858'; ctx.fillRect(x+8,y-10,8,50);
+  // robe bottom flair
+  ctx.fillStyle='#404040'; ctx.fillRect(x-20,y+30,40,12);
+  ctx.fillStyle='#383838'; ctx.fillRect(x-22,y+36,44,8);
+
+  // sleeves
+  ctx.fillStyle='#484848';
+  ctx.fillRect(x-26,y-8,12,30);  // left sleeve
+  ctx.fillRect(x+14,y-8,12,30);  // right sleeve
+  // hands
+  ctx.fillStyle='#C09070';
+  ctx.fillRect(x-27,y+18,10,8);
+  ctx.fillRect(x+18,y+18,10,8);
+
+  // head
+  ctx.fillStyle='#C09070'; ctx.fillRect(x-10,y-32,20,22);
+  // eyes
+  ctx.fillStyle='#1A1008'; ctx.fillRect(x-6,y-24,4,4); ctx.fillRect(x+2,y-24,4,4);
+  // long white beard
+  ctx.fillStyle='#E8E8E8'; ctx.fillRect(x-10,y-14,20,36);
+  ctx.fillStyle='#D8D8D8'; ctx.fillRect(x-8,y-14,4,36);
+  ctx.fillStyle='#F0F0F0'; ctx.fillRect(x+4,y-14,4,32);
+  // beard taper
+  ctx.fillStyle='#0C0A06';
+  ctx.fillRect(x-10,y+18,4,4); ctx.fillRect(x+6,y+18,4,4);
+  ctx.fillRect(x-10,y+22,8,4); ctx.fillRect(x+2,y+22,8,4);
+
+  // hat (tall gray)
+  ctx.fillStyle='#686868'; ctx.fillRect(x-12,y-58,24,28); // crown
+  ctx.fillStyle='#787878'; ctx.fillRect(x-12,y-58,6,28);  // highlight
+  ctx.fillStyle='#585858'; ctx.fillRect(x+6,y-58,6,28);   // shadow
+  ctx.fillStyle='#505050'; ctx.fillRect(x-20,y-34,40,6);  // brim
+  // hat tip bent slightly
+  ctx.fillStyle='#686868'; ctx.fillRect(x-8,y-72,16,16);
+  ctx.fillStyle='#787878'; ctx.fillRect(x-4,y-78,10,10);
+  ctx.fillStyle='#606060'; ctx.fillRect(x+2,y-80,6,6);
+  // hat band
+  ctx.fillStyle='#8060A0'; ctx.fillRect(x-12,y-36,24,4);
+  // small star on hat
+  ctx.fillStyle='#C0C0F0';
+  ctx.fillRect(x-2,y-52,5,1); ctx.fillRect(x,y-54,1,5);
+}
 
 /* ══════════════════════════════
    PWA — ICON + MANIFEST
